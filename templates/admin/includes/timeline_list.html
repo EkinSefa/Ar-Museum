@@ -1,0 +1,5 @@
+{% for entry in logs %}
+    {% include "admin/includes/timeline_item.html" with entry=entry %}
+{% empty %}
+    <p class="text-muted p-3">Gösterilecek işlem günlüğü bulunmuyor.</p>
+{% endfor %}

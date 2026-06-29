@@ -1,0 +1,231 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static jazzmin %}
+{% get_jazzmin_ui_tweaks as jazzmin_ui %}
+
+{% block bodyclass %}{{ block.super }} dashboard{% endblock %}
+
+{% block content_title %} {% trans 'Dashboard' %} {% endblock %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% trans 'Home' %}</a></li>
+        <li class="breadcrumb-item">{% trans 'Dashboard' %}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    <style>
+        /* Custom Timeline Overrides for Recent Actions */
+        #recent-actions-module .timeline {
+            position: relative;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        #recent-actions-module .timeline::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e2e8f0;
+            left: 20px;
+            margin: 0;
+            border-radius: 1px;
+        }
+        .dark-mode #recent-actions-module .timeline::before {
+            background: #475569;
+        }
+        #recent-actions-module .timeline > div {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        #recent-actions-module .timeline > div > i {
+            width: 26px;
+            height: 26px;
+            font-size: 11px;
+            line-height: 26px;
+            position: absolute;
+            color: #fff !important;
+            border-radius: 50%;
+            text-align: center;
+            left: 8px;
+            top: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            z-index: 10;
+        }
+        #recent-actions-module .timeline > div > .bg-gray {
+            background-color: #64748b !important;
+        }
+        #recent-actions-module .timeline > div > .bg-danger {
+            background-color: #ef4444 !important;
+        }
+        #recent-actions-module .timeline > div > .bg-success {
+            background-color: #10b981 !important;
+        }
+        #recent-actions-module .timeline-item {
+            margin-left: 45px !important;
+            margin-right: 0 !important;
+            background-color: #f8fafc !important;
+            border: 1px solid #f1f5f9 !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+            padding: 12px !important;
+        }
+        .dark-mode #recent-actions-module .timeline-item {
+            background-color: #1e293b !important;
+            border: 1px solid #334155 !important;
+            color: #f1f5f9 !important;
+        }
+        #recent-actions-module .timeline-item > .time {
+            color: #64748b;
+            float: right;
+            font-size: 10px;
+            font-weight: 500;
+        }
+        .dark-mode #recent-actions-module .timeline-item > .time {
+            color: #94a3b8;
+        }
+        #recent-actions-module .timeline-item > .timeline-header {
+            margin: 0 0 6px 0 !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            color: #1e293b !important;
+        }
+        .dark-mode #recent-actions-module .timeline-item > .timeline-header {
+            color: #f1f5f9 !important;
+        }
+        #recent-actions-module .timeline-item > .timeline-header a {
+            color: #d97706 !important;
+        }
+        .dark-mode #recent-actions-module .timeline-item > .timeline-header a {
+            color: #fbbf24 !important;
+        }
+        #recent-actions-module .timeline-item > .timeline-body {
+            font-size: 12px;
+            color: #475569;
+            padding: 0;
+        }
+        .dark-mode #recent-actions-module .timeline-item > .timeline-body {
+            color: #cbd5e1;
+        }
+    </style>
+
+    {% get_side_menu using="app_list" as dashboard_list %}
+    {% if dashboard_list %}
+        {% widthratio dashboard_list|length 2 1 as middle %}
+    {% endif %}
+
+    <div class="col-lg-9 col-12">
+        <div class="row">
+            <div class="col-md-6 col-sm-12">
+                {% for app in dashboard_list %}
+                    <div class="card mb-3 shadow-sm border-0">
+                        <div class="card-header bg-white dark:bg-slate-800 border-bottom">
+                            <h5 class="m-0 font-weight-bold">{{ app.name }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tbody>
+                                {% for model in app.models %}
+                                    <tr>
+                                        <td>
+                                            {% if model.url %}<a href="{{ model.url }}" class="font-weight-bold text-dark dark:text-white">{{ model.name }}</a>{% else %}{{ model.name }}{% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group float-end">
+                                                {% if model.add_url %}
+                                                    <a href="{{ model.add_url }}" class="btn btn-sm {{ jazzmin_ui.button_classes.success }} addlink">{% trans 'Add' %}</a>
+                                                {% endif %}
+                                                {% if model.url %}
+                                                    {% if model.view_only %}
+                                                        <a href="{{ model.url }}" class="btn btn-sm {{ jazzmin_ui.button_classes.info }} viewlink">{% trans 'View' %}</a>
+                                                    {% else %}
+                                                        <a href="{{ model.url }}" class="btn btn-sm {{ jazzmin_ui.button_classes.info }} changelink">{% if model.custom %}{% trans 'Go' %}{% else %}{% trans 'Change' %}{% endif %}</a>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {% if forloop.counter == middle|add:"0" %}
+                    </div>
+                    <div class="col-md-6 col-sm-12">
+                    {% endif %}
+
+                {% endfor %}
+                </div>
+        </div>
+
+    </div>
+    <div class="col-lg-3 col-12">
+        <div id="content-related">
+            <div class="module" id="recent-actions-module">
+                <h4 class="mb-3 font-weight-bold">{% trans 'Recent actions' %}</h4>
+                {% load log %}
+                {% get_admin_log 6 as admin_log for_user user %}
+                {% if not admin_log %}
+                    <p>{% trans 'None available' %}</p>
+                {% else %}
+                    <div class="timeline">
+                        {% for entry in admin_log %}
+                            <div>
+                                {% if entry.is_change %}
+                                    <i class="fas fa-edit bg-gray"></i>
+                                {% elif entry.is_deletion %}
+                                    <i class="fas fa-trash bg-danger"></i>
+                                {% elif entry.is_addition %}
+                                    <i class="fas fa-plus bg-success"></i>
+                                {% endif %}
+
+                                <div class="timeline-item">
+                                    <span class="time"><i class="fas fa-clock"></i> {% blocktrans with timesince=entry.action_time|timesince %}{{ timesince }} önce{% endblocktrans %}</span>
+                                    <h3 class="timeline-header no-border">
+                                        {% if entry.is_deletion or not entry.get_admin_url %}
+                                            {{ entry.object_repr }}
+                                        {% else %}
+                                            <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
+                                        {% endif %}
+
+                                        {% if entry.model %}
+                                            <span class="mini quiet">
+                                                {% filter capfirst %}
+                                                    {{ entry.model }}
+                                                {% endfilter %}
+                                            </span>
+                                        {% endif %}
+                                    </h3>
+                                    {% if not entry.is_deletion %}
+                                        <div class="timeline-body">
+                                            {% if entry.is_addition %}
+                                                {{ entry }}
+                                            {% else %}
+                                                <ul style="list-style: none; padding: 0; margin: 0;">
+                                                    {% action_message_to_list entry as action_message_list %}
+                                                    {% for action_message in action_message_list %}
+                                                        <li>{{ action_message.msg|style_bold_first_word }}</li>
+                                                    {% endfor %}
+                                                </ul>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                        <div>
+                            <i class="fa fa-clock bg-gray"></i>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

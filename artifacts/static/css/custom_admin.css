@@ -1,0 +1,35 @@
+/* Sidebar custom bottom button container */
+.sidebar-custom-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1039;
+    background-color: inherit;
+    transition: all 0.3s ease;
+}
+
+/* Sidebar inner padding */
+.main-sidebar .sidebar {
+    padding-bottom: 70px !important;
+}
+
+/* Adjust button when sidebar is collapsed */
+.sidebar-collapse .sidebar-custom-bottom {
+    padding: 10px !important;
+}
+
+.sidebar-collapse .sidebar-custom-bottom a span {
+    display: none !important; /* Hide the text "Siteye Dön" */
+}
+
+.sidebar-collapse .sidebar-custom-bottom a i {
+    margin-right: 0 !important; /* Center the icon */
+}
+
+.sidebar-collapse .sidebar-custom-bottom a {
+    padding: 8px 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}

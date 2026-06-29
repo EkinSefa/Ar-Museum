@@ -1,0 +1,381 @@
+{% extends "artifacts/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="status-container">
+    <div class="status-card">
+        <div id="processingUI">
+            <div class="loader-wrapper">
+                <div class="scanning-beam"></div>
+                <div class="cube-animation">
+                    <i class="fas fa-cube"></i>
+                </div>
+            </div>
+            <h2>3D Model Üretiliyor...</h2>
+            <p>Stable Fast 3D modeli görselinizi işliyor. Lütfen bu sayfayı kapatmayın.</p>
+            
+            <div class="progress-section">
+                <div class="progress-bar-container">
+                    <div id="progressBar" class="progress-bar"></div>
+                </div>
+                <div class="progress-info">
+                    <span id="progressPercent">0%</span>
+                    <span id="statusText">İşlem Hazırlanıyor...</span>
+                </div>
+            </div>
+
+            <ul class="steps-list">
+                <li id="step1" class="step active"><i class="fas fa-image"></i> Görsel Analiz</li>
+                <li id="step2" class="step"><i class="fas fa-brain"></i> AI Modelleme</li>
+                <li id="step3" class="step"><i class="fas fa-draw-polygon"></i> Mesh Oluşturma</li>
+                <li id="step4" class="step"><i class="fas fa-magic"></i> Optimizasyon</li>
+            </ul>
+        </div>
+
+        <div id="completedUI" style="display: none;">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2>Üretim Tamamlandı!</h2>
+            <p>Modeliniz başarıyla oluşturuldu ve müze koleksiyonuna eklendi.</p>
+            <div class="action-buttons">
+                <a href="" id="viewArtifactBtn" class="btn-primary">
+                    <i class="fas fa-eye"></i> Modeli Görüntüle
+                </a>
+                <a href="{% url 'artifacts:index' %}" class="btn-secondary">Müzeye Dön</a>
+            </div>
+        </div>
+
+        <div id="failedUI" style="display: none;">
+            <div class="error-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h2>Üretim Başarısız Oldu</h2>
+            <p id="errorMessage">{{ session.error_message }}</p>
+            <div class="action-buttons">
+                <a href="{% url 'artifacts:scanner' %}" class="btn-primary">Yeniden Dene</a>
+                <a href="{% url 'artifacts:index' %}" class="btn-secondary">Müzeye Dön</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .status-container {
+        max-width: 600px;
+        margin: 60px auto;
+        padding: 0 20px;
+        text-align: center;
+    }
+
+    /* Light Mode (Default) Styling */
+    .status-card {
+        background: #ffffff;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 30px;
+        padding: 60px 40px;
+        color: #1e293b;
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04), 0 8px 15px -6px rgba(0, 0, 0, 0.04);
+        transition: all 0.3s ease;
+    }
+
+    .status-card h2 {
+        color: #0f172a;
+        font-weight: 800;
+        font-size: 1.8rem;
+        margin-top: 10px;
+        margin-bottom: 12px;
+    }
+
+    .status-card p {
+        color: #64748b;
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    .loader-wrapper {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        margin: 0 auto 30px;
+    }
+
+    .cube-animation {
+        font-size: 5rem;
+        color: #00d2ff;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    .scanning-beam {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: #00d2ff;
+        box-shadow: 0 0 15px #00d2ff;
+        animation: scan 2s linear infinite;
+        z-index: 2;
+    }
+
+    @keyframes scan {
+        0% { top: 0; opacity: 0; }
+        50% { top: 100%; opacity: 1; }
+        100% { top: 0; opacity: 0; }
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        50% { transform: translateY(-20px) rotate(10deg); }
+    }
+
+    .success-icon {
+        font-size: 5rem;
+        color: #2ecc71;
+        margin-bottom: 20px;
+    }
+
+    .error-icon {
+        font-size: 5rem;
+        color: #e74c3c;
+        margin-bottom: 20px;
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-top: 30px;
+    }
+
+    .btn-primary {
+        width: 100%;
+        padding: 15px;
+        border: none;
+        border-radius: 14px;
+        background: linear-gradient(45deg, #00d2ff, #3a7bd5);
+        color: white !important;
+        font-size: 1.1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.2s, opacity 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        text-decoration: none;
+    }
+
+    .btn-primary:hover {
+        opacity: 0.95;
+    }
+
+    .btn-secondary {
+        padding: 15px;
+        border: 1px solid rgba(15, 23, 42, 0.15);
+        border-radius: 12px;
+        color: #334155;
+        text-decoration: none;
+        transition: all 0.3s;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .btn-secondary:hover {
+        background: rgba(15, 23, 42, 0.04);
+        color: #0f172a;
+        border-color: rgba(15, 23, 42, 0.25);
+    }
+
+    /* Progress & Steps Styles */
+    .progress-section {
+        margin: 30px 0;
+    }
+
+    .progress-bar-container {
+        width: 100%;
+        height: 10px;
+        background: rgba(15, 23, 42, 0.05);
+        border-radius: 5px;
+        overflow: hidden;
+        margin-bottom: 10px;
+        border: 1px solid rgba(15, 23, 42, 0.05);
+    }
+
+    .progress-bar {
+        width: 0%;
+        height: 100%;
+        background: linear-gradient(90deg, #00d2ff, #3a7bd5);
+        box-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
+        transition: width 0.5s ease;
+    }
+
+    .progress-info {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .steps-list {
+        list-style: none;
+        padding: 0;
+        margin: 40px 0 0;
+        text-align: left;
+    }
+
+    .step {
+        padding: 12px 0;
+        color: #94a3b8;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .step i {
+        width: 20px;
+        text-align: center;
+    }
+
+    .step.active {
+        color: #3a7bd5;
+        font-weight: bold;
+    }
+
+    .step.completed {
+        color: #2ecc71;
+    }
+
+    .step.completed i {
+        color: #2ecc71;
+    }
+
+    /* Dark Mode Overrides */
+    .dark .status-card {
+        background: rgba(30, 41, 59, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+        box-shadow: none;
+    }
+
+    .dark .status-card h2 {
+        color: white;
+    }
+
+    .dark .status-card p {
+        color: #cbd5e1;
+    }
+
+    .dark .btn-secondary {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    .dark .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+
+    .dark .progress-bar-container {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .dark .progress-info {
+        color: #aaa;
+    }
+
+    .dark .step {
+        color: #555;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .dark .step.active {
+        color: #00d2ff;
+        text-shadow: 0 0 10px rgba(0, 210, 255, 0.3);
+    }
+</style>
+
+<script>
+    let currentProgress = 0;
+    let simulatedSteps = [
+        { progress: 15, text: "Görsel analiz ediliyor...", stepId: "step1" },
+        { progress: 40, text: "AI modeli yükleniyor...", stepId: "step2" },
+        { progress: 65, text: "3D mesh örülüyor...", stepId: "step3" },
+        { progress: 85, text: "Doku optimizasyonu yapılıyor...", stepId: "step4" }
+    ];
+    let stepIndex = 0;
+
+    function updateSimulatedProgress() {
+        if (currentProgress < 90) {
+            currentProgress += Math.random() * 2;
+            if (currentProgress > 90) currentProgress = 90;
+            
+            document.getElementById('progressBar').style.width = currentProgress + '%';
+            document.getElementById('progressPercent').innerText = Math.floor(currentProgress) + '%';
+            
+            // Step updates
+            if (stepIndex < simulatedSteps.length && currentProgress >= simulatedSteps[stepIndex].progress) {
+                const prevStep = document.getElementById(simulatedSteps[stepIndex].stepId);
+                if (prevStep) {
+                    prevStep.classList.remove('active');
+                    prevStep.classList.add('completed');
+                    prevStep.querySelector('i').className = 'fas fa-check-circle';
+                }
+                
+                stepIndex++;
+                if (stepIndex < simulatedSteps.length) {
+                    const nextStep = document.getElementById(simulatedSteps[stepIndex].stepId);
+                    if (nextStep) {
+                        nextStep.classList.add('active');
+                        document.getElementById('statusText').innerText = simulatedSteps[stepIndex].text;
+                    }
+                }
+            }
+        }
+    }
+
+    // Progress bar'ı canlandır
+    const progressInterval = setInterval(updateSimulatedProgress, 500);
+
+    function checkStatus() {
+        fetch(window.location.href, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'completed') {
+                clearInterval(progressInterval);
+                document.getElementById('progressBar').style.width = '100%';
+                document.getElementById('progressPercent').innerText = '100%';
+                
+                setTimeout(() => {
+                    document.getElementById('processingUI').style.display = 'none';
+                    document.getElementById('completedUI').style.display = 'block';
+                    document.getElementById('viewArtifactBtn').href = `/artifact/${data.artifact_id}/`;
+                }, 1000);
+            } else if (data.status === 'failed') {
+                clearInterval(progressInterval);
+                document.getElementById('errorMessage').innerText = data.error_message || "Bilinmeyen bir hata oluştu.";
+                document.getElementById('processingUI').style.display = 'none';
+                document.getElementById('failedUI').style.display = 'block';
+            } else {
+                // Polling continues
+                setTimeout(checkStatus, 3000);
+            }
+        })
+        .catch(error => {
+            console.error('Error status check:', error);
+            setTimeout(checkStatus, 5000);
+        });
+    }
+
+    // Start polling
+    setTimeout(checkStatus, 1500);
+</script>
+{% endblock %}

@@ -1,0 +1,71 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: ar_museum_db
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME:-ar_museum}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  minio:
+    image: minio/minio:latest
+    container_name: ar_museum_minio
+    restart: always
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY:-minioadmin}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+  minio-create-bucket:
+    image: minio/mc:latest
+    container_name: ar_museum_minio_setup
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set localminio http://minio:9000 ${AWS_ACCESS_KEY_ID:-minioadmin} ${AWS_SECRET_ACCESS_KEY:-minioadmin};
+      /usr/bin/mc mb --ignore-existing localminio/${AWS_STORAGE_BUCKET_NAME:-ar-museum};
+      /usr/bin/mc anonymous set download localminio/${AWS_STORAGE_BUCKET_NAME:-ar-museum};
+      exit 0;
+      "
+
+  web:
+    build: .
+    container_name: ar_museum_web
+    restart: always
+    command: >
+      sh -c "
+      until python -c \"import os, psycopg2; psycopg2.connect(dbname=os.getenv('DB_NAME','ar_museum'), user=os.getenv('DB_USER','postgres'), password=os.getenv('DB_PASSWORD',''), host='db', port='5432').close()\" 2>/dev/null; do
+        echo 'Waiting for database...'
+        sleep 1
+      done &&
+      python manage.py migrate &&
+      python manage.py runserver 0.0.0.0:8000
+      "
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - AWS_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_S3_PUBLIC_URL=http://localhost:9000
+    depends_on:
+      - db
+      - minio
+
+volumes:
+  postgres_data:
+  minio_data:

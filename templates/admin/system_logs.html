@@ -1,0 +1,203 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block bodyclass %}{{ block.super }} dashboard{% endblock %}
+
+{% block content_title %} {% trans 'System Logs' %} {% endblock %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% trans 'Home' %}</a></li>
+        <li class="breadcrumb-item">İşlem Günlükleri</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    <style>
+        /* Custom Timeline Overrides for Custom System Logs Page */
+        #timeline-card .timeline {
+            position: relative;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        #timeline-card .timeline::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e2e8f0;
+            left: 20px;
+            margin: 0;
+            border-radius: 1px;
+        }
+        .dark-mode #timeline-card .timeline::before {
+            background: #475569;
+        }
+        #timeline-card .timeline > div {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        #timeline-card .timeline > div > i {
+            width: 26px;
+            height: 26px;
+            font-size: 11px;
+            line-height: 26px;
+            position: absolute;
+            color: #fff !important;
+            border-radius: 50%;
+            text-align: center;
+            left: 8px;
+            top: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            z-index: 10;
+        }
+        #timeline-card .timeline > div > .bg-gray {
+            background-color: #64748b !important;
+        }
+        #timeline-card .timeline > div > .bg-danger {
+            background-color: #ef4444 !important;
+        }
+        #timeline-card .timeline > div > .bg-success {
+            background-color: #10b981 !important;
+        }
+        #timeline-card .timeline-item {
+            margin-left: 45px !important;
+            margin-right: 0 !important;
+            background-color: #f8fafc !important;
+            border: 1px solid #f1f5f9 !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+            padding: 12px !important;
+        }
+        .dark-mode #timeline-card .timeline-item {
+            background-color: #1e293b !important;
+            border: 1px solid #334155 !important;
+            color: #f1f5f9 !important;
+        }
+        #timeline-card .timeline-item > .time {
+            color: #64748b;
+            float: right;
+            font-size: 10px;
+            font-weight: 500;
+        }
+        .dark-mode #timeline-card .timeline-item > .time {
+            color: #94a3b8;
+        }
+        #timeline-card .timeline-item > .timeline-header {
+            margin: 0 0 6px 0 !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            color: #1e293b !important;
+        }
+        .dark-mode #timeline-card .timeline-item > .timeline-header {
+            color: #f1f5f9 !important;
+        }
+        #timeline-card .timeline-item > .timeline-body {
+            font-size: 12px;
+            color: #475569;
+            padding: 0;
+        }
+        .dark-mode #timeline-card .timeline-item > .timeline-body {
+            color: #cbd5e1;
+        }
+    </style>
+
+    <div class="col-12">
+        <div class="card card-outline card-warning shadow-sm border-0" id="timeline-card" style="border-radius: 16px;">
+            <div class="card-header bg-white dark:bg-slate-800 border-bottom d-flex align-items-center justify-content-between p-3">
+                <h5 class="m-0 font-weight-bold text-dark dark:text-white"><i class="fas fa-history mr-2 text-warning"></i>İşlem Günlükleri</h5>
+                <span class="badge badge-warning text-dark px-3 py-1 font-weight-bold" style="background-color: #fef3c7; color: #d97706; border-radius: 12px;">
+                    <span class="spinner-grow spinner-grow-sm mr-2 text-warning" role="status" style="width: 8px; height: 8px; vertical-align: middle;"></span>
+                    Canlı Güncelleniyor
+                </span>
+            </div>
+            <div class="card-body p-4">
+                <div class="timeline" id="timeline-container">
+                    {% include "admin/includes/timeline_list.html" %}
+                </div>
+                
+                <div id="pagination-container">
+                    {% include "admin/includes/pagination_controls.html" %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            let currentPage = 1;
+            let latestId = {{ latest_id }};
+
+            // Poll for new logs every 3 seconds (only on page 1)
+            setInterval(function() {
+                if (currentPage === 1) {
+                    fetch('?ajax=true&action=poll&since_id=' + latestId)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.new_logs && data.new_logs.length > 0) {
+                                const container = document.getElementById('timeline-container');
+                                
+                                // Prepend new logs in reverse order so they appear chronologically at the top
+                                data.new_logs.reverse().forEach(log => {
+                                    // Create a temporary element to hold the HTML
+                                    const tempDiv = document.createElement('div');
+                                    tempDiv.innerHTML = log.html;
+                                    tempDiv.style.opacity = 0;
+                                    tempDiv.style.transition = 'opacity 0.5s ease-in-out';
+                                    
+                                    // Prepend to container
+                                    container.insertBefore(tempDiv, container.firstChild);
+                                    
+                                    // Trigger reflow to start transition
+                                    tempDiv.offsetHeight;
+                                    tempDiv.style.opacity = 1;
+                                });
+                                
+                                // Update latestId
+                                latestId = data.latest_id;
+                                
+                                // Keep page 1 list size capped at exactly 10 log items
+                                const items = container.children;
+                                while (items.length > 10) {
+                                    container.removeChild(items[items.length - 1]);
+                                }
+                            }
+                        })
+                        .catch(err => console.error('Error polling logs:', err));
+                }
+            }, 3000);
+
+            // Handle AJAX pagination click
+            document.getElementById('pagination-container').addEventListener('click', function(e) {
+                const pageLink = e.target.closest('a[data-page]');
+                if (pageLink) {
+                    e.preventDefault();
+                    const page = pageLink.getAttribute('data-page');
+                    loadPage(page);
+                }
+            });
+
+            function loadPage(page) {
+                fetch('?ajax=true&page=' + page)
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('timeline-container').innerHTML = data.timeline_html;
+                        document.getElementById('pagination-container').innerHTML = data.pagination_html;
+                        currentPage = parseInt(page);
+                        
+                        // Scroll to top of timeline card smoothly
+                        window.scrollTo({
+                            top: document.getElementById('timeline-card').offsetTop - 20,
+                            behavior: 'smooth'
+                        });
+                    })
+                    .catch(err => console.error('Error loading page:', err));
+            }
+        });
+    </script>
+{% endblock %}

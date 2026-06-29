@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+    <title>Premium AR Deneyimi - {{ object.title }}</title>
+    
+    <!-- A-Frame 1.3.0 for broad compatibility -->
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        // Premium Gesture Handler: One-finger rotation & Two-finger pinch-to-zoom
+        AFRAME.registerComponent('gesture-handler', {
+            init: function () {
+                this.isDragging = false;
+                this.lastTouchX = 0;
+                this.initialScale = { x: 1, y: 1, z: 1 };
+                this.initialDistance = 0;
+                this.isPinching = false;
+
+                this.handleTouchStart = this.handleTouchStart.bind(this);
+                this.handleTouchMove = this.handleTouchMove.bind(this);
+                this.handleTouchEnd = this.handleTouchEnd.bind(this);
+
+                window.addEventListener('touchstart', this.handleTouchStart);
+                window.addEventListener('touchmove', this.handleTouchMove);
+                window.addEventListener('touchend', this.handleTouchEnd);
+            },
+            handleTouchStart: function (e) {
+                if (e.touches.length === 1) {
+                    this.isDragging = true;
+                    this.isPinching = false;
+                    this.lastTouchX = e.touches[0].clientX;
+                } else if (e.touches.length === 2) {
+                    this.isDragging = false;
+                    this.isPinching = true;
+                    const scale = this.el.getAttribute('scale');
+                    this.initialScale = { x: scale.x, y: scale.y, z: scale.z };
+                    this.initialDistance = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                }
+            },
+            handleTouchMove: function (e) {
+                if (e.touches.length === 1 && this.isDragging) {
+                    const touchX = e.touches[0].clientX;
+                    const deltaX = touchX - this.lastTouchX;
+                    const rotation = this.el.getAttribute('rotation');
+                    // One finger swipe rotates Y axis
+                    rotation.y += deltaX * 0.5;
+                    this.el.setAttribute('rotation', rotation);
+                    this.lastTouchX = touchX;
+                } else if (e.touches.length === 2 && this.isPinching) {
+                    const distance = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    const factor = distance / this.initialDistance;
+                    const newScale = Math.min(Math.max(0.005, this.initialScale.x * factor), 10.0);
+                    this.el.setAttribute('scale', { x: newScale, y: newScale, z: newScale });
+                }
+            },
+            handleTouchEnd: function () {
+                this.isDragging = false;
+                this.isPinching = false;
+            }
+        });
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@800&display=swap');
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Inter', sans-serif; }
+        
+        #start-overlay {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98); z-index: 10000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: all 0.5s ease;
+        }
+        .start-btn {
+            padding: 20px 45px; background: #f59e0b; color: #000; border: none;
+            border-radius: 20px; font-weight: 800; font-size: 14px; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 10px 40px rgba(245, 158, 11, 0.4);
+        }
+
+        .arjs-loader {
+            height: 100%; width: 100%; position: absolute; top: 0; left: 0;
+            background-color: rgba(15, 23, 42, 0.9); z-index: 9999;
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+            pointer-events: none; opacity: 0; transition: opacity 0.3s;
+        }
+
+        #back-button {
+            position: fixed; top: 30px; left: 20px; z-index: 1000;
+            padding: 12px 24px; background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(15px); color: white; border-radius: 15px;
+            text-decoration: none; font-weight: 700; font-size: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .controls-overlay {
+            position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
+            z-index: 1000; display: flex; flex-direction: column; gap: 12px;
+        }
+        .control-btn {
+            width: 48px; height: 48px; background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 14px; color: white; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; font-size: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            transition: all 0.2s ease;
+        }
+        .control-btn:active {
+            transform: scale(0.9);
+            background: #f59e0b;
+            color: #000;
+        }
+
+        .ui-overlay {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; text-align: center; width: 90%; pointer-events: none;
+        }
+        .instruction-card {
+            background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(15px);
+            padding: 12px 25px; border-radius: 18px; color: white; display: inline-block;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        #https-warning {
+            position: fixed; top: 0; left: 0; width: 100%; background: #ef4444; 
+            color: white; font-size: 10px; font-weight: bold; text-align: center; 
+            padding: 8px; z-index: 11000; display: none;
+        }
+    </style>
+</head>
+
+<body style="margin: 0px; overflow: hidden;">
+    <div id="https-warning">GÜVENLİ BAĞLANTI YOK: Jiroskop yerine parmakla döndürmeyi deneyin.</div>
+
+    <div id="start-overlay">
+        <h2 style="color: white; font-family: 'Outfit'; margin-bottom: 30px; text-align: center; letter-spacing: 2px;">MÜZE AR MODU</h2>
+        <button class="start-btn" onclick="startAR()">Deneyimi Başlat</button>
+        <div style="color: rgba(255,255,255,0.5); font-size: 11px; margin-top: 25px; width: 260px; text-align: center; line-height: 1.6;">
+            <p style="margin: 4px 0;"><i class="fas fa-fingerprint text-amber-500 mr-2"></i>Tek Parmak: Sağa/Sola Döndürme</p>
+            <p style="margin: 4px 0;"><i class="fas fa-expand-arrows-alt text-amber-500 mr-2"></i>İki Parmak: Büyüt / Küçült</p>
+            <p style="margin: 4px 0;"><i class="fas fa-sliders-h text-amber-500 mr-2"></i>Butonlar: Hassas Kontrol & Sıfırlama</p>
+        </div>
+    </div>
+
+    <div class="arjs-loader">
+        <div style="border: 3px solid #f59e0b; border-radius: 50%; width: 25px; height: 25px; border-bottom-color: transparent; animation: spin 1s linear infinite;"></div>
+        <div style="color:white; margin-top:10px; font-size:10px; font-weight: bold; tracking-widest: 1px;">YÜKLENİYOR...</div>
+    </div>
+
+    <a href="{% url 'artifacts:detail' object.pk %}" id="back-button"><i class="fas fa-arrow-left mr-2"></i>Geri Dön</a>
+
+    <div class="controls-overlay">
+        <button class="control-btn" onclick="adjustScale(0.05)" title="Büyüt"><i class="fas fa-plus"></i></button>
+        <button class="control-btn" onclick="adjustScale(-0.05)" title="Küçült"><i class="fas fa-minus"></i></button>
+        <button class="control-btn" onclick="adjustRotation(-15)" title="Sola Döndür"><i class="fas fa-undo"></i></button>
+        <button class="control-btn" onclick="adjustRotation(15)" title="Sağa Döndür"><i class="fas fa-redo"></i></button>
+        <button class="control-btn" onclick="resetPosition()" title="Sıfırla">RE</button>
+    </div>
+
+    <div class="ui-overlay">
+        <div class="instruction-card">
+            <p style="margin: 0; font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Serbest Görünüm Yayında</p>
+        </div>
+    </div>
+
+    <a-scene
+        embedded
+        arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best;"
+        renderer="antialias: true; alpha: true; colorManagement: true;"
+        vr-mode-ui="enabled: false">
+
+        <a-assets>
+            <a-asset-item id="artifact-model" src="{{ object.model_3d.url }}"></a-asset-item>
+        </a-assets>
+
+        <!-- Artifact Entity -->
+        <a-entity 
+            id="artifact-wrapper"
+            position="0 -1.6 -3"
+            scale="0 0 0"
+            gesture-handler
+            animation__reveal="property: scale; to: 0.35 0.35 0.35; dur: 800; easing: easeOutBack; startEvents: model-loaded">
+            
+            <a-entity id="main-artifact" gltf-model="#artifact-model"></a-entity>
+        </a-entity>
+
+        <a-light type="ambient" intensity="0.8"></a-light>
+        <a-light type="directional" intensity="1.0" position="-1 4 2"></a-light>
+        
+        <!-- Standard Camera with look-controls -->
+        <a-entity id="main-camera" camera look-controls fov="80"></a-entity>
+    </a-scene>
+
+    <script>
+        if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+            document.getElementById('https-warning').style.display = 'block';
+        }
+
+        let isReady = false;
+
+        function startAR() {
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(initializeScene)
+                    .catch(initializeScene);
+            } else {
+                initializeScene();
+            }
+        }
+
+        function initializeScene() {
+            document.getElementById('start-overlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('start-overlay').style.display = 'none';
+                if (!isReady) document.querySelector('.arjs-loader').style.opacity = '1';
+                setTimeout(hideLoader, 5000);
+            }, 500);
+        }
+
+        function hideLoader() {
+            isReady = true;
+            const loader = document.querySelector('.arjs-loader');
+            if (loader) loader.style.display = 'none';
+        }
+
+        window.addEventListener('camera-init', hideLoader);
+        window.addEventListener('load', () => {
+            const artifact = document.getElementById('main-artifact');
+            if (artifact) artifact.addEventListener('model-loaded', hideLoader);
+        });
+
+        function adjustScale(amount) {
+            const wrapper = document.getElementById('artifact-wrapper');
+            const currentScale = wrapper.getAttribute('scale');
+            const nextScale = Math.min(Math.max(0.005, currentScale.x + amount), 5.0);
+            wrapper.setAttribute('scale', { x: nextScale, y: nextScale, z: nextScale });
+        }
+
+        function adjustRotation(amount) {
+            const wrapper = document.getElementById('artifact-wrapper');
+            const rotation = wrapper.getAttribute('rotation');
+            rotation.y += amount;
+            wrapper.setAttribute('rotation', rotation);
+        }
+
+        function resetPosition() {
+            const wrapper = document.getElementById('artifact-wrapper');
+            wrapper.setAttribute('position', '0 -1.6 -3');
+            wrapper.setAttribute('scale', '0.35 0.35 0.35');
+            wrapper.setAttribute('rotation', '0 0 0');
+        }
+    </script>
+    <style> @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } </style>
+</body>
+</html>

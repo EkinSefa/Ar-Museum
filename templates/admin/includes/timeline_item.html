@@ -1,0 +1,50 @@
+{% load i18n jazzmin %}
+<div>
+    {% if entry.is_change %}
+        <i class="fas fa-edit bg-gray"></i>
+    {% elif entry.is_deletion %}
+        <i class="fas fa-trash bg-danger"></i>
+    {% elif entry.is_addition %}
+        <i class="fas fa-plus bg-success"></i>
+    {% endif %}
+
+    <div class="timeline-item">
+        <span class="time"><i class="fas fa-clock"></i> {{ entry.action_time|date:"H:i:s" }}</span>
+        <h3 class="timeline-header no-border">
+            <span class="font-weight-bold" style="color: #475569;">{{ entry.user.username }}</span>
+            {% if entry.is_addition %}
+                <span class="badge badge-success px-2 py-1 ml-1 text-xs">Ekleme</span>
+            {% elif entry.is_change %}
+                <span class="badge badge-warning px-2 py-1 ml-1 text-xs text-dark" style="background-color: #fde68a;">Değişiklik</span>
+            {% elif entry.is_deletion %}
+                <span class="badge badge-danger px-2 py-1 ml-1 text-xs">Silme</span>
+            {% endif %}
+            
+            {% if entry.is_deletion or not entry.get_admin_url %}
+                <span class="ml-2 font-weight-bold">{{ entry.object_repr }}</span>
+            {% else %}
+                <a href="{{ entry.get_admin_url }}" class="ml-2 font-weight-bold" style="color: #d97706;">{{ entry.object_repr }}</a>
+            {% endif %}
+
+            {% if entry.model %}
+                <span class="ml-2 badge badge-secondary" style="font-weight: 500; font-size: 11px;">
+                    {% filter capfirst %}{{ entry.model }}{% endfilter %}
+                </span>
+            {% endif %}
+        </h3>
+        {% if not entry.is_deletion %}
+            <div class="timeline-body mt-2">
+                {% if entry.is_addition %}
+                    {{ entry }}
+                {% else %}
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        {% action_message_to_list entry as action_message_list %}
+                        {% for action_message in action_message_list %}
+                            <li>{{ action_message.msg|style_bold_first_word }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AR Müzesi{% endblock %}</title>
+    
+    <!-- Google Fonts: Inter & Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- A-Frame & Extras (Essential for 3D/AR) -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    <!-- Orbit Controls Component -->
+    <script src="https://unpkg.com/aframe-orbit-controls-component@0.1.14/dist/aframe-orbit-controls-component.min.js"></script>
+
+    <!-- Google <model-viewer> (Fusion AI Standard) -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <!-- Tailwind CSS with Custom Config -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        amber: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            200: '#fde68a',
+                            300: '#fcd34d',
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                            800: '#92400e',
+                            900: '#78350f',
+                            950: '#451a03',
+                        },
+                        dark: {
+                            bg: '#0f172a',
+                            card: '#1e293b',
+                            border: '#334155'
+                        }
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif'],
+                        'outfit': ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+        .dark {
+            --glass-bg: rgba(15, 23, 42, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.05);
+            color-scheme: dark;
+        }
+        
+        body {
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .museum-card {
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .museum-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .dark .museum-card:hover {
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d97706; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #b45309; }
+    </style>
+
+    <script>
+        // Init theme
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+</head>
+<body class="bg-gray-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-sans">
+    <nav class="glass sticky top-0 z-50 h-20 flex items-center shadow-sm">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <a href="{% url 'artifacts:index' %}" class="flex items-center gap-3 group">
+                <div class="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-amber-500/30 group-hover:rotate-12 transition-transform">
+                    <i class="fas fa-landmark text-xl"></i>
+                </div>
+                <span class="font-outfit font-black text-2xl tracking-tighter text-slate-900 dark:text-white uppercase">AR Museum</span>
+            </a>
+            
+            <div class="flex items-center gap-8">
+                <div class="hidden md:flex items-center gap-8 font-semibold text-sm uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                    <a href="{% url 'artifacts:index' %}" class="hover:text-amber-500 transition">Koleksiyon</a>
+                    <a href="{% url 'artifacts:scanner' %}" class="hover:text-amber-500 transition flex items-center gap-2">
+                        <i class="fas fa-camera text-amber-500"></i> 3D Tara
+                    </a>
+                    <a href="/admin/" class="hover:text-amber-500 transition">Yönetim</a>
+                </div>
+                
+                <button id="theme-toggle" class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-200/50 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-transparent hover:border-amber-500/30">
+                    <i id="theme-toggle-dark-icon" class="fas fa-moon text-amber-600 hidden text-xl"></i>
+                    <i id="theme-toggle-light-icon" class="fas fa-sun text-yellow-500 hidden text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-6 flex-grow py-12">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="mt-20 py-12 border-t border-slate-200 dark:border-slate-800 glass">
+        <div class="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+            <div class="flex items-center gap-3 opacity-60">
+                <i class="fas fa-landmark text-amber-600"></i>
+                <span class="font-outfit font-bold tracking-tighter uppercase">AR Museum</span>
+            </div>
+            <p class="text-slate-500 text-sm font-medium">&copy; 2026 AR Müzesi. Tüm hakları saklıdır.</p>
+
+        </div>
+    </footer>
+
+    <script>
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+
+        function updateIcons() {
+            if (document.documentElement.classList.contains('dark')) {
+                themeToggleLightIcon.classList.remove('hidden');
+                themeToggleDarkIcon.classList.add('hidden');
+            } else {
+                themeToggleDarkIcon.classList.remove('hidden');
+                themeToggleLightIcon.classList.add('hidden');
+            }
+        }
+
+        updateIcons();
+
+        themeToggleBtn.addEventListener('click', function() {
+            document.documentElement.classList.toggle('dark');
+            if (document.documentElement.classList.contains('dark')) {
+                localStorage.setItem('color-theme', 'dark');
+            } else {
+                localStorage.setItem('color-theme', 'light');
+            }
+            updateIcons();
+        });
+    </script>
+</body>
+</html>
