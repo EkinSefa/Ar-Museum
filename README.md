@@ -119,24 +119,17 @@ Docker üzerinde çalışan yerel depolama yönetim paneline erişmek için:
 
 Proje hakkında sorularınız, geri bildirimleriniz veya iş birliği teklifleriniz için benimle iletişime geçebilirsiniz:
 
-## 📬 İletişim
-
-Proje hakkında sorularınız, geri bildirimleriniz veya iş birliği teklifleriniz için benimle iletişime geçebilirsiniz:
-
 <table>
   <tr style="border: none; background: none;">
     <td width="100" style="border: none; background: none; padding: 0; margin: 0;">
       <a href="https://www.linkedin.com/in/sefa-ekin-01130a273/" target="_blank">
-        <img src="SEFA_EKIN_PROFILE_IMAGE_URL" width="100" height="100" alt="Sefa Ekin" style="display: block; border: none;" />
+        <img src="https://media.licdn.com/dms/image/v2/D4D03AQG0FU8t2wEz0A/profile-displayphoto-crop_800_800/B4DZ3eIuqIHQAI-/0/1777548324995?e=1784160000&v=beta&t=PcdRBAgKNfDyHuffnixgmDvI_f78VOcDfNASKbwIhSM" width="100" height="100" alt="Sefa Ekin" style="display: block; border: none; border-radius: 50%;" />
       </a>
     </td>
-
     <td style="border: none; background: none; padding-left: 20px; vertical-align: middle;">
       <strong style="font-size: 20px;">SEFA EKİN</strong><br />
-      Yazılım Mühendisi<br />
       Anında iletişim ve ağ kurmak için:<br />
-      👉 <a href="https://www.linkedin.com/in/sefa-ekin-01130a273/" target="_blank" style="text-decoration: none; font-weight: bold;">
-      LinkedIn üzerinden bağlanın</a>
+      👉 <a href="https://www.linkedin.com/in/sefa-ekin-01130a273/" target="_blank" style="text-decoration: none; font-weight: bold;">LinkedIn üzerinden bağlanın</a>
     </td>
   </tr>
 </table>
