@@ -129,7 +129,7 @@ Proje hakkında sorularınız, geri bildirimleriniz veya iş birliği teklifleri
     <td style="border: none; background: none; padding-left: 20px; vertical-align: middle;">
       <strong style="font-size: 20px;">UĞUR GÜLAYDIN</strong><br />
       Anında iletişim ve ağ kurmak için:<br />
-      👉 <a href="[https://www.linkedin.com/in/sefa-ekin-01130a273)" target="_blank" style="text-decoration: none; font-weight: bold;">LinkedIn üzerinden bağlanın</a>
+      👉 <a href="https://www.linkedin.com/in/sefa-ekin-01130a273/" target="_blank" style="text-decoration: none; font-weight: bold;">LinkedIn üzerinden bağlanın</a>
     </td>
   </tr>
 </table>
